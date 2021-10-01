@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home page</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@100;300;400;500;700;900&display=swap');
+        body{
+            font-family: 'Noto Sans SC', sans-serif !important;
+        }
+        span{
+            font-weight: 600;
+        }
+        .address{
+            float: right;
+            font-size: 80%;
+            margin-top: 20px;
+            padding: 15px 30px;
+            border:1px solid gray;
+            border-radius: 0 20px 20px 20px;
+        }
+    </style>
+    <link rel="stylesheet" href="./styles/site.css" />
+    <script src="./scripts/jquery.js"></script>
+    <script>
+        $(document).ready(()=>{
+          $('#bars').click(()=>{
+              $('#topbar').toggleClass('responsive')
+          })
+        });
+         
+     </script>
+</head>
+<body>
+    <nav class="navbar" id="topbar">
+        
+        <a href="javascript:void(0)" class="nav-link icon" id="bars"><i class="fa fa-bars"></i></a>
+        <a href="./index.html" class="nav-link home">Home</a>
+        <a href="./localStorage.html" class="nav-link">Local Storage</a>
+        <a href="./indexedDB.html" class="nav-link">IndexedDB Storage</a>
+    </nav>
+    <div class="card">
+        <h1 class="main-head">Offline File Storage with Local Storage & IndexedDB Storage</h1>
+        <hr class="my" />
+        <p class="focused my">
+            <span>Local Storage:</span> Stores Files in Local Storage. Local Storage space limit is <span>5MB</span> (max). So <span>Video/Audio </span>excluded. You can store small files.
+        </p>
+        <p class="focused my">
+            <span>IndexedDB Storage: </span> Stores Files in IndexedDB Storage. You can store <span>any</span> files.
+        </p>
+        <div class="address">Project Submitted By<br/>Trainee Name: REYAD AHMMED<br/>Trainee ID: 1260660<br/>Batch ID: ESAD-CS/ACSL-A/45/01</div>
+    </div>
+    
+    <script>
+        async function  doIt (){
+            const dbs = await window.indexedDB.databases()
+            dbs.forEach(db => { 
+                console.log(db.name)
+                window.indexedDB.deleteDatabase(db.name) })
+        }
+        //doIt();
+    </script>
+</body>
+</html>

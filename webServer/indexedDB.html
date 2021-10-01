@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IndexedDB Storage</title>
+    <link rel="stylesheet" href="./styles/site.css" />
+    <script src="./scripts/jquery.js"></script>
+    <script>
+      window.indexedDB =
+        window.indexedDB ||
+        window.webkitIndexedDB ||
+        window.mozIndexedDB ||
+        window.OIndexedDB ||
+        window.msIndexedDB;
+      IDBTransaction =
+        window.IDBTransaction ||
+        window.webkitIDBTransaction ||
+        window.OIDBTransaction ||
+        window.msIDBTransaction;
+      dbVersion = 1;
+      $(() => {
+        $("#bars").click(() => {
+          $("#topbar").toggleClass("responsive");
+        });
+        
+        /* Indedexed open/create */
+
+        var request = indexedDB.open("Database", dbVersion);
+        request.onsuccess = (evt) => {
+          db = evt.result;
+          db = request.result;
+
+          db.onerror = function (event) {
+            console.log("Error creating/accessing IndexedDB database");
+          };
+          if (db.setVersion) {
+            if (db.version != dbVersion) {
+              var setVersion = db.setVersion(dbVersion);
+              setVersion.onsuccess = function () {
+                db.createObjectStore("folders", {
+                  keyPath: "id",
+                  autoIncrement: true,
+                });
+              };
+            } else {
+              loadFolders();
+            }
+          } else {
+            loadFolders();
+          }
+        };
+        request.onupgradeneeded = function (evt) {
+          evt.target.result.createObjectStore("folders", {
+            keyPath: "id",
+            autoIncrement: true,
+          });
+        };
+
+        /* Delete function */
+
+        $(document).on('click', 'button.del', function(){
+          var index = $(this).data('f-index');
+          var key = $(this).data('folder-key');
+          var tx = db.transaction(["folders"], "readwrite");
+          tx.oncomplete = (evt) => {
+            console.log("All done!");
+            loadFolders();
+          };
+
+          tx.onerror = (evt) => {
+
+            /* Don't forget to handle errors! */
+
+            console.log(evt);
+          };
+          var objectStore = tx.objectStore("folders");
+          var getReq = objectStore.get(Number(key));
+          getReq.onsuccess = (evt) => {
+            var data = evt.target.result;
+           
+            data.files.splice(index, 1);
+            var updateReq = objectStore.put(data);
+            updateReq.onsuccess = (evt) => {
+              var x = document.getElementById("snackbar");
+              x.innerHTML = "Data Deleted successfully!";
+
+              /* Add the "show" class to Div */
+
+              x.className = "show";
+
+              /* After 3 seconds, remove the show class from Div */
+              setTimeout(function () {
+                x.className = x.className.replace("show", "");
+              }, 3000);
+              return;
+            };
+            updateReq.onerror = (evt) => {
+              console.log(evt);
+            };
+          };
+         
+        });
+ 
+        /*Download function*/
+
+        $(document).on('click', 'button.down', function(){
+          var index = $(this).data('f-index');
+          var key = $(this).data('folder-key');
+          var fname = $(this).data('file-name');
+          var tx = db.transaction(["folders"]);
+          tx.oncomplete = (evt) => {
+            console.log("All done!");
+            
+          };
+
+          tx.onerror = (evt) => {
+            // Don't forget to handle errors!
+            console.log(evt);
+          };
+          var objectStore = tx.objectStore("folders");
+          var getReq = objectStore.get(Number(key));
+          getReq.onsuccess = (evt) => {
+            var data = evt.target.result;
+            const linkSource = `${data.files[index].content}`;
+              const downloadLink = document.createElement("a");
+              const fileName = fname;
+
+              downloadLink.href = linkSource;
+              downloadLink.download = fileName;
+              downloadLink.click();
+          };
+          
+         
+       });
+       ///End download function
+      });
+      function loadFolders() {
+        var tx = db.transaction(["folders"]);
+        tx.oncomplete = (evt) => {
+          console.log("All done!");
+        };
+
+        tx.onerror = (evt) => {
+          // Don't forget to handle errors!
+          console.log(evt);
+        };
+        var objectStore = tx.objectStore("folders");
+        $("#files").empty();
+        objectStore.openCursor().onsuccess = (evt) => {
+          var cursor = evt.target.result;
+          if (cursor) {
+           
+            let key = cursor.key;
+            var descArea = $(
+            `<div class="row mb-1 bottom-border" id="descarea"></div>`
+          );
+            $(
+              `<div class="col-4">
+                                <div id="folder" class="label-main">${cursor.value.folder}</div>
+                                <div class="label-secondary">${cursor.value.description}</div>
+                              </div>`
+            ).appendTo(descArea);
+            console.log(descArea);
+            descArea.appendTo($("#files"));
+            var fileArea = $(
+              `<div class="row mb-1 bottom-border" id="filearea"></div>`
+            );
+            var fileContainer = $(`<div class="col-4 flex-col-f"></div>`);
+            cursor.value.files.forEach((v, i) => {
+              //console.log(v)
+              $(`<div class="box mr-2">
+                    <img class="figure" width="250" src='./icons/${getIcon(
+                      v.type
+                    )}' width='200' />
+                    <div><span class="full-grow">${v.name}</span> 
+                         
+                    </div>
+                    <div>
+                         <button class="btn small down" data-f-index="${i}" data-folder-key="${key}" data-file-name="${
+                v.name
+              }" ><i class ='fa fa-download'></i></button>
+                         <button class="btn small del" data-f-index="${i}" data-folder-key="${key}"><i class ='fa fa-trash'></i></button>
+                    </div>
+                    </div>`).appendTo(fileContainer);
+            });
+            fileContainer.appendTo(fileArea);
+            //console.log(fileArea.html());
+
+            fileArea.appendTo($("#files"));
+            cursor.continue();
+          }
+        };
+      }
+      function getIcon(mime) {
+        if (mime.indexOf("pdf") >= 0) return "pdf.png";
+        else if (mime.indexOf("word") >= 0) return "word.png";
+        else if (mime.indexOf("zip") >= 0) return "zip.png";
+        else if (mime.indexOf("rar") >= 0) return "zip.png";
+        else if (mime.indexOf("tar") >= 0) return "zip.png";
+        else return "file.png";
+      }
+    </script>
+  </head>
+  <body>
+    <nav class="navbar" id="topbar">
+      
+      <a href="javascript:void(0)" class="nav-link icon" id="bars"><i class="fa fa-bars"></i></a>
+      <a href="./index.html" class="nav-link home">Home</a>
+      <a href="./localStorage.html" class="nav-link">Local Storage</a>
+      <a href="./indexedDB.html" class="nav-link">IndexedDB Storage</a>
+  </nav>
+    <div class="container" id="container">
+      <div class="row">
+        <div class="col-4 flex-col mb-1">
+          <a href="./dropFilesIndexedDB.html" class="btn" style="font-weight: 600;">
+            <i class="fa fa-plus"></i> Store Files</a
+          >
+          <spn class="full-grow"></spn>
+          
+        </div>
+      </div>
+      <div id="files" style="display: block">No Files Saved</div>
+    </div>
+    <div id="snackbar">Some text some message..</div>
+  </body>
+</html>

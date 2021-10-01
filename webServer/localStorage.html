@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Locale Storage</title>
+    <link rel="stylesheet" href="./styles/site.css" />
+    <script src="./scripts/jquery.js"></script>
+    <script>
+      $(() => {
+        $("#bars").click(() => {
+          $("#topbar").toggleClass("responsive");
+        });
+       $(document).on('click', 'button.del', function(){
+          var index = $(this).data('f-index');
+          var key = $(this).data('folder-key');
+          let data = JSON.parse(
+               localStorage.getItem(key)
+          );
+          console.log(data);
+          data.files.splice(index, 1);
+          localStorage.setItem(
+               key,
+               JSON.stringify(data)
+          );
+          $('#files').empty();
+
+          loadFolders();
+          var x = document.getElementById("snackbar");
+                    x.innerHTML = "File Deleted Successfully";
+
+                    /* Add the "show" class to Div */
+
+                    x.className = "show";
+
+                    /* After 3 seconds, remove the show class from Div */
+                    
+                    setTimeout(function () {
+                         x.className = x.className.replace(
+                              "show",
+                              ""
+                         );
+                    }, 3000);
+         
+       });
+       $(document).on('click', 'button.down', function(){
+          var index = $(this).data('f-index');
+          var key = $(this).data('folder-key');
+          var fname = $(this).data('file-name');
+          let data = JSON.parse(
+               localStorage.getItem(key)
+          );
+          console.log(data);
+          const linkSource = `${data.files[index].content}`;
+          const downloadLink = document.createElement("a");
+          const fileName = fname;
+
+          downloadLink.href = linkSource;
+          downloadLink.download = fileName;
+          downloadLink.click();
+         
+       });
+        loadFolders();
+      });
+      function getIcon(mime){
+               if(mime.indexOf('pdf') >= 0)
+               return 'pdf.png';
+               else if(mime.indexOf('word') >= 0)
+               return 'word.png';
+               else
+               return 'file.png';
+          }
+      function loadFolders() {
+       
+        for (let i = 0; i < localStorage.length; i++) {
+          var descArea = $(
+            `<div class="row mb-1 bottom-border" id="descarea"></div>`
+          );
+          let key = localStorage.key(i);
+          let data = JSON.parse(localStorage.getItem(key));
+          $(
+            `<div class="col-4">
+                                <div id="folder" class="label-main">${data.folder}</div>
+                                <div class="label-secondary">${data.description}</div>
+                              </div>`
+          ).appendTo(descArea);
+           console.log(descArea);
+           descArea.appendTo($("#files"));                  
+          var fileArea = $(
+            `<div class="row mb-1 bottom-border" id="filearea"></div>`
+          );
+          var fileContainer = $(`<div class="col-4 flex-col-f"></div>`);
+          data.files.forEach((v, i) => {
+               
+            $(`<div class="box mr-2">
+                    <img class="figure" width="250" src='./icons/${getIcon(v.type)}' width='200' />
+                    <div><span class="full-grow">${v.name}</span> 
+                         
+                    </div>
+                    <div>
+                         <button class="btn small down" data-f-index="${i}" data-folder-key="${key}" data-file-name="${v.name}" ><i class ='fa fa-download'></i></button>
+                         <button class="btn small del" data-f-index="${i}" data-folder-key="${key}"><i class ='fa fa-trash'></i></button>
+                    </div>
+                    </div>`).appendTo(fileContainer);
+          });
+          fileContainer.appendTo(fileArea);
+          
+          fileArea.appendTo($("#files"));
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <nav class="navbar" id="topbar">
+      
+      <a href="javascript:void(0)" class="nav-link icon" id="bars"><i class="fa fa-bars"></i></a>
+      <a href="./index.html" class="nav-link home">Home</a>
+      <a href="./localStorage.html" class="nav-link">Local Storage</a>
+      <a href="./indexedDB.html" class="nav-link">IndexedDB Storage</a>
+  </nav>
+    <div class="container" id="container">
+     <div class="row">
+          <div class="col-4 flex-col mb-1">
+            <a href="./dropFilesLocaleStorage.html" class="btn" style="font-weight: 600;"><i class="fa fa-plus"></i> Store Files</a>
+               <spn class="full-grow"></spn>
+               
+          </div>
+         
+
+     </div>
+     <div id="files" style="display: block;">
+
+     </div>
+    </div>
+    <div id="snackbar">Some Text Some Message..</div>
+  </body>
+</html>
